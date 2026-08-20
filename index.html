@@ -14,7 +14,7 @@
     .question-box { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-top: 20px; border: 1px solid #333; }
     .option-btn { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px; text-align: left; font-size: 15px; cursor: pointer; }
     .option-btn:active { background: #444; }
-    #status { color: #888; font-size: 14px; margin-top: 10px; }
+    #status { font-size: 14px; margin-top: 12px; padding: 10px; background: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
   </style>
 </head>
 <body>
@@ -24,32 +24,36 @@
     <div class="card" onclick="loadSubject('Science')">Science</div>
   </div>
   
-  <div id="status">Loading questions...</div>
+  <div id="status" style="color: #0088cc;">Connecting to questions.json...</div>
   <div id="quiz-container" class="question-box" style="display:none;"></div>
 
   <script>
     let questionsData = [];
     const letters = ["A", "B", "C", "D"];
 
-    // Fetch questions with error handling
-    fetch('./questions.json')
+    // Force network fetch by appending timestamp parameter
+    fetch('./questions.json?nc=' + new Date().getTime())
       .then(res => {
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status + " (File not found)");
         return res.json();
       })
       .then(data => { 
         questionsData = data; 
-        document.getElementById('status').innerText = "Questions loaded! Tap a subject above.";
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.color = "#4CAF50";
+        statusDiv.innerText = "✓ Questions loaded successfully (" + data.length + " total). Tap Math above!";
       })
       .catch(err => {
-        document.getElementById('status').innerText = "Failed to load questions.json: " + err.message;
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.color = "#F44336";
+        statusDiv.innerText = "Fetch Error: " + err.message;
       });
 
     function loadSubject(subject) {
       const container = document.getElementById('quiz-container');
       
       if (!questionsData || questionsData.length === 0) {
-        alert("Questions are still loading, please wait a second and tap again!");
+        alert("Cannot load options yet. Status: " + document.getElementById('status').innerText);
         return;
       }
 
@@ -57,10 +61,11 @@
       
       if (!filtered.length) {
         container.style.display = 'block';
-        container.innerHTML = <p>No questions found for ${subject}.</p>;
+        container.innerHTML = <p style="color:#ffcc00;">No questions found under subject "${subject}".</p>;
         return;
       }
       
+      // Render first question from subject
       const q = filtered[0];
       container.style.display = 'block';
       container.innerHTML = `
@@ -78,11 +83,12 @@
     function checkAnswer(selectedLetter, correctLetter, explanation) {
       const resultDiv = document.getElementById('result');
       if (selectedLetter === correctLetter) {
-        resultDiv.innerHTML = <p style="color:#4CAF50; background:#1b381e; padding:10px; border-radius:6px;"><strong>Correct!</strong> ${explanation}</p>;
+        resultDiv.innerHTML = <p style="color:#4CAF50; background:#1b381e; padding:10px; border-radius:6px; margin:0;"><strong>Correct!</strong> ${explanation}</p>;
       } else {
-        resultDiv.innerHTML = <p style="color:#F44336; background:#3b1c1c; padding:10px; border-radius:6px;"><strong>Incorrect.</strong> ${explanation}</p>;
+        resultDiv.
+      innerHTML = <p style="color:#F44336; background:#3b1c1c; padding:10px; border-radius:6px; margin:0;"><strong>Incorrect.</strong> ${explanation}</p>;
       }
     }
   </script>
 </body>
-</html>
+</html>    
