@@ -6,11 +6,15 @@
   <title>GED Prep Hub</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; padding: 16px; margin: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #121212; color: #fff; padding: 16px; margin: 0; }
+    h2 { margin-top: 0; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-    .card { background: #1e1e1e; padding: 16px; border-radius: 8px; text-align: center; font-weight: bold; cursor: pointer; }
-    .question-box { background: #2a2a2a; padding: 16px; border-radius: 8px; margin-top: 20px; }
-    .option-btn { display: block; width: 100%; margin: 8px 0; padding: 10px; background: #333; color: #fff; border: none; border-radius: 6px; text-align: left; }
+    .card { background: #2a2a2a; padding: 20px; border-radius: 12px; text-align: center; font-weight: bold; cursor: pointer; border: 1px solid #333; }
+    .card:active { background: #3a3a3a; transform: scale(0.98); }
+    .question-box { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-top: 20px; border: 1px solid #333; }
+    .option-btn { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px; text-align: left; font-size: 15px; cursor: pointer; }
+    .option-btn:active { background: #444; }
+    #status { color: #888; font-size: 14px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -19,47 +23,64 @@
     <div class="card" onclick="loadSubject('Math')">Math</div>
     <div class="card" onclick="loadSubject('Science')">Science</div>
   </div>
+  
+  <div id="status">Loading questions...</div>
   <div id="quiz-container" class="question-box" style="display:none;"></div>
 
   <script>
     let questionsData = [];
     const letters = ["A", "B", "C", "D"];
 
-    // Fetch the renamed file
-    fetch('questions.json')
-      .then(res => res.json())
-      .then(data => { questionsData = data; });
+    // Fetch questions with error handling
+    fetch('./questions.json')
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP error " + res.status);
+        return res.json();
+      })
+      .then(data => { 
+        questionsData = data; 
+        document.getElementById('status').innerText = "Questions loaded! Tap a subject above.";
+      })
+      .catch(err => {
+        document.getElementById('status').innerText = "Failed to load questions.json: " + err.message;
+      });
 
     function loadSubject(subject) {
       const container = document.getElementById('quiz-container');
-      const filtered = questionsData.filter(q => q.subject === subject);
+      
+      if (!questionsData || questionsData.length === 0) {
+        alert("Questions are still loading, please wait a second and tap again!");
+        return;
+      }
+
+      const filtered = questionsData.filter(q => q.subject && q.subject.toLowerCase() === subject.toLowerCase());
       
       if (!filtered.length) {
         container.style.display = 'block';
-        container.innerHTML = '<p>No questions found for this subject.</p>';
+        container.innerHTML = <p>No questions found for ${subject}.</p>;
         return;
       }
       
       const q = filtered[0];
       container.style.display = 'block';
       container.innerHTML = `
-        <small>${q.topic} • ${q.difficulty}</small>
-        <h3>${q.question}</h3>
+        <small style="color:#aaa">${q.topic  ''} • ${q.difficulty  ''}</small>
+        <h3 style="margin: 10px 0;">${q.question}</h3>
         ${q.options.map((opt, i) => `
-          <button class="option-btn" onclick="checkAnswer('${letters[i]}', '${q.answer}', '${q.explanation}')">
-            ${letters[i]}. ${opt}
+          <button class="option-btn" onclick="checkAnswer('${letters[i]}', '${q.answer}', \`${q.explanation || ''}\`)">
+            <strong>${letters[i]}.</strong> ${opt}
           </button>
         `).join('')}
-        <div id="result"></div>
+        <div id="result" style="margin-top: 15px;"></div>
       `;
     }
 
     function checkAnswer(selectedLetter, correctLetter, explanation) {
       const resultDiv = document.getElementById('result');
       if (selectedLetter === correctLetter) {
-        resultDiv.innerHTML = <p style="color:#4CAF50;"><strong>Correct!</strong> ${explanation}</p>;
+        resultDiv.innerHTML = <p style="color:#4CAF50; background:#1b381e; padding:10px; border-radius:6px;"><strong>Correct!</strong> ${explanation}</p>;
       } else {
-        resultDiv.innerHTML = <p style="color:#F44336;"><strong>Incorrect.</strong> ${explanation}</p>;
+        resultDiv.innerHTML = <p style="color:#F44336; background:#3b1c1c; padding:10px; border-radius:6px;"><strong>Incorrect.</strong> ${explanation}</p>;
       }
     }
   </script>
