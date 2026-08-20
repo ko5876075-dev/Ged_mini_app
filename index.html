@@ -1,135 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>GED Mini</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#0b0d12;color:#f5f7fb;font-family:Inter,system-ui,-apple-system,sans-serif}
-.app{max-width:760px;margin:auto;min-height:100vh;padding:22px 18px 90px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.logo{font-size:25px;font-weight:800}.pill{background:#191d27;border:1px solid #292e3b;border-radius:999px;padding:8px 12px;font-size:13px}
-h1{font-size:30px;margin:0 0 8px}.muted{color:#9ba3b4}.section{margin-top:28px}.section h2{font-size:18px;margin:0 0 14px}
-.subjects{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:#151922;border:1px solid #242a36;border-radius:18px;padding:18px;cursor:pointer}.card:hover{transform:translateY(-1px)}
-.icon{font-size:28px}.card b{display:block;margin-top:9px}.small{font-size:13px;color:#929aab;margin-top:4px}
-.button{width:100%;border:0;border-radius:14px;padding:15px;margin-top:10px;background:#f1f3f6;color:#0b0d12;font-weight:750;font-size:15px;cursor:pointer}.secondary{background:#191d27;color:#fff;border:1px solid #2a3040}
-.question{font-size:21px;line-height:1.45;font-weight:700;margin:24px 0}.option{background:#151922;border:1px solid #2a3040;color:#fff;text-align:left}.option:disabled{cursor:default;opacity:.95}.correct{border-color:#55c58a;background:#143023}.wrong{border-color:#e26d76;background:#35191d}
-.topline{display:flex;justify-content:space-between;gap:12px;align-items:center}.progress{height:7px;background:#1b202b;border-radius:99px;overflow:hidden;margin-top:14px}.bar{height:100%;width:0;background:#fff;transition:width .2s}
-.feedback{padding:16px;border-radius:15px;background:#151922;border:1px solid #2a3040;margin-top:16px}.home{display:block}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#0e1016cc;backdrop-filter:blur(12px);border-top:1px solid #202532}.nav{max-width:760px;margin:auto;display:flex;justify-content:space-around;padding:12px}.nav button{background:none;border:0;color:#aab1bf;font-size:12px}.nav .active{color:#fff;font-weight:700}
-.hidden{display:none!important}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GED Prep Hub</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; padding: 16px; margin: 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    .card { background: #1e1e1e; padding: 16px; border-radius: 8px; text-align: center; font-weight: bold; cursor: pointer; }
+    .question-box { background: #2a2a2a; padding: 16px; border-radius: 8px; margin-top: 20px; }
+    .option-btn { display: block; width: 100%; margin: 8px 0; padding: 10px; background: #333; color: #fff; border: none; border-radius: 6px; text-align: left; }
+  </style>
 </head>
 <body>
-<div class="app">
-  <div id="home" class="home">
-    <div class="header"><div class="logo">🎓 GED Mini</div><div class="pill" id="homeScore">Score 0</div></div>
-    <p class="muted">Practice smarter. Track your progress.</p>
-    <div class="section"><h2>Browse Subjects</h2>
-      <div class="subjects">
-        <div class="card" onclick="startMath()"><div class="icon">🧮</div><b>Mathematical Reasoning</b><div class="small">25 practice questions</div></div>
-        <div class="card"><div class="icon">📖</div><b>RLA</b><div class="small">Coming next</div></div>
-        <div class="card"><div class="icon">🔬</div><b>Science</b><div class="small">Coming next</div></div>
-        <div class="card"><div class="icon">🌎</div><b>Social Studies</b><div class="small">Coming next</div></div>
-      </div>
-    </div>
-    <div class="section"><h2>🆕 Latest Practice</h2>
-      <div class="card" onclick="startMath()"><b>Math Practice Set #1</b><div class="small">25 questions • Easy to Hard</div><button class="button">Start Practice</button></div>
-    </div>
+  <h2>GED Subjects</h2>
+  <div class="grid">
+    <div class="card" onclick="loadSubject('Math')">Math</div>
+    <div class="card" onclick="loadSubject('Science')">Science</div>
   </div>
+  <div id="quiz-container" class="question-box" style="display:none;"></div>
 
-  <div id="quiz" class="hidden">
-    <div class="header"><button class="button secondary" style="width:auto;margin:0" onclick="goHome()">← Home</button><div class="pill" id="counter"></div></div>
-    <div class="topline"><span class="muted" id="topic"></span><span class="muted" id="difficulty"></span></div>
-    <div class="progress"><div class="bar" id="bar"></div></div>
-    <div class="question" id="question"></div>
-    <div id="options"></div>
-    <div id="feedback" class="feedback hidden"></div>
-    <button id="next" class="button hidden" onclick="nextQuestion()">Next Question →</button>
-  </div>
+  <script>
+    let questionsData = [];
+    const letters = ["A", "B", "C", "D"];
 
-  <div id="results" class="hidden">
-    <div class="header"><div class="logo">🏆 Results</div></div>
-    <div class="card" style="text-align:center">
-      <div class="icon">🎯</div><h1 id="resultScore">0%</h1><p class="muted" id="resultText"></p>
-      <button class="button" onclick="startMath()">Practice Again</button>
-      <button class="button secondary" onclick="goHome()">Back Home</button>
-    </div>
-  </div>
-</div>
+    // Fetch the renamed file
+    fetch('questions.json')
+      .then(res => res.json())
+      .then(data => { questionsData = data; });
 
-<div class="bottom"><div class="nav">
-<button class="active" onclick="goHome()">🏠<br>Home</button>
-<button onclick="startMath()">📝<br>Practice</button>
-<button>📊<br>Progress</button>
-<button>👤<br>Profile</button>
-</div></div>
+    function loadSubject(subject) {
+      const container = document.getElementById('quiz-container');
+      const filtered = questionsData.filter(q => q.subject === subject);
+      
+      if (!filtered.length) {
+        container.style.display = 'block';
+        container.innerHTML = '<p>No questions found for this subject.</p>';
+        return;
+      }
+      
+      const q = filtered[0];
+      container.style.display = 'block';
+      container.innerHTML = `
+        <small>${q.topic} • ${q.difficulty}</small>
+        <h3>${q.question}</h3>
+        ${q.options.map((opt, i) => `
+          <button class="option-btn" onclick="checkAnswer('${letters[i]}', '${q.answer}', '${q.explanation}')">
+            ${letters[i]}. ${opt}
+          </button>
+        `).join('')}
+        <div id="result"></div>
+      `;
+    }
 
-<script>
-let questions=[], index=0, score=0, answered=false;
-
-async function loadQuestions(){
-  const res=await fetch("questions.json");
-  questions=await res.json();
-}
-function startMath(){
-  if(!questions.length)return;
-  index=0;score=0;answered=false;
-  document.getElementById("home").classList.add("hidden");
-  document.getElementById("results").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
-  renderQuestion();
-}
-function renderQuestion(){
-  answered=false;
-  const q=questions[index];
-  document.getElementById("counter").textContent=`${index+1} / ${questions.length}`;
-  document.getElementById("topic").textContent=q.topic;
-  document.getElementById("difficulty").textContent=q.difficulty;
-  document.getElementById("bar").style.width=`${((index)/questions.length)*100}%`;
-  document.getElementById("question").textContent=q.question;
-  const box=document.getElementById("options"); box.innerHTML="";
-  q.options.forEach((opt,i)=>{
-    const b=document.createElement("button");
-    b.className="button option"; b.textContent=`${String.fromCharCode(65+i)}. ${opt}`;
-    b.onclick=()=>answer(String.fromCharCode(65+i),b); box.appendChild(b);
-  });
-  document.getElementById("feedback").classList.add("hidden");
-  document.getElementById("next").classList.add("hidden");
-}
-function answer(choice,clicked){
-  if(answered)return; answered=true;
-  const q=questions[index];
-  [...document.querySelectorAll(".option")].forEach((b,i)=>{
-    const letter=String.fromCharCode(65+i);
-    b.disabled=true;
-    if(letter===q.answer)b.classList.add("correct");
-    if(letter===choice && choice!==q.answer)b.classList.add("wrong");
-  });
-  if(choice===q.answer)score++;
-  const f=document.getElementById("feedback");
-  f.classList.remove("hidden");
-  f.innerHTML=`<b>${choice===q.answer?"✅ Correct!":"❌ Incorrect"}</b><br><br>${q.explanation}`;
-  document.getElementById("bar").style.width=`${((index+1)/questions.length)*100}%`;
-  document.getElementById("next").classList.remove("hidden");
-}
-function nextQuestion(){
-  if(index<questions.length-1){index++;renderQuestion();}
-  else showResults();
-}
-function showResults(){
-  document.getElementById("quiz").classList.add("hidden");
-  document.getElementById("results").classList.remove("hidden");
-  const pct=Math.round(score/questions.length*100);
-  document.getElementById("resultScore").textContent=pct+"%";
-  document.getElementById("resultText").textContent=`You answered ${score} out of ${questions.length} questions correctly.`;
-  document.getElementById("homeScore").textContent=`Score ${score}`;
-}
-function goHome(){
-  document.getElementById("quiz").classList.add("hidden");
-  document.getElementById("results").classList.add("hidden");
-  document.getElementById("home").classList.remove("hidden");
-}
-loadQuestions().catch(()=>alert("Could not load the question database."));
-</script>
+    function checkAnswer(selectedLetter, correctLetter, explanation) {
+      const resultDiv = document.getElementById('result');
+      if (selectedLetter === correctLetter) {
+        resultDiv.innerHTML = <p style="color:#4CAF50;"><strong>Correct!</strong> ${explanation}</p>;
+      } else {
+        resultDiv.innerHTML = <p style="color:#F44336;"><strong>Incorrect.</strong> ${explanation}</p>;
+      }
+    }
+  </script>
 </body>
 </html>
